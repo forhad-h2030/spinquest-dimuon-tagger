@@ -66,8 +66,8 @@ ROOT `TTree` with standardized branches.
 | 3 | `rec_dimu_E` | Dimuon energy | `dimu.E()` |
 | 4 | `rec_dimu_pz` | Dimuon  Pz | `dimu.Pz()` |
 | 5 | `rec_dimu_M` | Dimuon IM | `dimu.M()` |
-| 6 | `rec_mu_theta_pos` | μ⁺ bend angle | `atan2(pT⁺, pz⁺)` |
-| 7 | `rec_mu_theta_neg` | μ⁻ bend angle | `atan2(pT⁻, pz⁻)` |
+| 6 | `rec_mu_theta_pos` | μ⁺ bend angle (x-z plane) | `arctan(px⁺ / pz⁺)` |
+| 7 | `rec_mu_theta_neg` | μ⁻ bend angle (x-z plane) | `arctan(px⁻ / pz⁻)` |
 | 8 | `rec_mu_open_angle` | Opening angle between mu+ and mu- | `arccos( dot(p_pos, p_neg) / (norm(p_pos) * norm(p_neg)) )` |
 | 9 | `rec_mu_Epos` | μ⁺ energy | `mu_pos.E()` |
 |10 | `rec_mu_Eneg` | μ⁻ energy | `mu_neg.E()` |
