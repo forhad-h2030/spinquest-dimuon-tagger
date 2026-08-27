@@ -5,7 +5,7 @@
 #SBATCH -c 1
 #SBATCH --mem=18G
 #SBATCH --time=03:00:00
-#SBATCH --array=0-2
+#SBATCH --array=0-1
 #SBATCH -o train_%A_%a.out
 #SBATCH -e train_%A_%a.err
 set -euo pipefail
@@ -30,13 +30,11 @@ mkdir -p "$OUT_ROOT"
 SCRIPTS=(
   "scripts/train_jpsi_vs_nonjpsi.py"
   "scripts/train_psip_vs_nonpsip.py"
-  "scripts/train_dy_vs_comb.py"
 )
 
 RUNS=(
   "jpsi_vs_nonjpsi"
   "psip_vs_nonpsip"
-  "dy_comb_raw"
 )
 
 IDX="${SLURM_ARRAY_TASK_ID}"
@@ -97,4 +95,4 @@ apptainer exec --nv --cleanenv \
   "$CONTAINERDIR/pytorch-2.7.0.sif" \
   python3 "$SCRIPT"
 
-# sbatch --export=ALL,NBOOT=1 submit_train_3.sh
+# sbatch --export=ALL,NBOOT=1 submit_train_jpsi_psip.sh

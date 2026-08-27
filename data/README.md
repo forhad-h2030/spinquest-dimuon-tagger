@@ -56,7 +56,8 @@ These are the reconstructed vertex coordinates of the μ⁺ and μ⁻ tracks.
 
 # DNN Input Features (Notation & Definitions)
 
-the **18 physics features** used as inputs to the binary DNN classifiers   (J/ψ vs non-J/ψ, ψ′ vs non-ψ′, DY vs combinatoric). All features are computed in   `utils/extract_dimu_features.py`   from a ROOT `TTree` with standardized branches.
+The 12 physics features, computed in `utils/extract_dimu_features.py` from a
+ROOT `TTree` with standardized branches.
 
 | # | Feature name | Definition | Computation |
 |---|-------------|------------|-------------|
@@ -68,14 +69,8 @@ the **18 physics features** used as inputs to the binary DNN classifiers   (J/ψ
 | 6 | `rec_mu_theta_pos` | μ⁺ bend angle | `atan2(pT⁺, pz⁺)` |
 | 7 | `rec_mu_theta_neg` | μ⁻ bend angle | `atan2(pT⁻, pz⁻)` |
 | 8 | `rec_mu_open_angle` | Opening angle between mu+ and mu- | `arccos( dot(p_pos, p_neg) / (norm(p_pos) * norm(p_neg)) )` |
-| 9 | `rec_mu_dpt` | pT diff | `pT⁺ − pT⁻` |
-|10 | `rec_dimu_mT` | transverse mass | `sqrt(M² + pT²)` |
-|11 | `rec_mu_Epos` | μ⁺ energy | `mu_pos.E()` |
-|12 | `rec_mu_Eneg` | μ⁻ energy | `mu_neg.E()` |
-|13 | `rec_track_pos_x_st1` | μ⁺ x at St1 | ROOT branch |
-|14 | `rec_track_neg_x_st1` | μ⁻ x at St1 | ROOT branch |
-|15 | `rec_track_pos_px_st1` | μ⁺ Px at St1 | ROOT branch |
-|16 | `rec_track_neg_px_st1` | μ⁻ Px at St1 | ROOT branch |
-|17 | `rec_dz_vtx` |vertex-z diff | `z⁺ − z⁻` |
-|18 | `rec_mu_deltaR` |angular separation | `sqrt((Δη)² + (Δφ)²)` |
+| 9 | `rec_mu_Epos` | μ⁺ energy | `mu_pos.E()` |
+|10 | `rec_mu_Eneg` | μ⁻ energy | `mu_neg.E()` |
+|11 | `rec_dz_vtx` |vertex-z diff | `z⁺ − z⁻` |
+|12 | `rec_mu_deltaR` |angular separation | `sqrt((Δη)² + (Δφ)²)` |
 ---

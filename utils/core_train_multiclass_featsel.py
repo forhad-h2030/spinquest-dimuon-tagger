@@ -503,6 +503,7 @@ def train_multiclass_task(
     run_name: str,
     class_names: Optional[List[str]] = None,
     use_class_weights: bool = False,
+    feature_names: Optional[List[str]] = None,   # kept-feature names -> stored in the checkpoint
 ) -> Dict[str, object]:
     """
     Trains K-class classifier from per-class feature arrays Xs.
@@ -666,6 +667,7 @@ def train_multiclass_task(
                 "input_dim": input_dim,
                 "num_classes": K,
                 "class_names": class_names,
+                "feature_names": feature_names,  # features (in order) the model uses
                 "cfg": asdict(cfg),
                 "scaler": scaler,
                 "best_val": best_val,
