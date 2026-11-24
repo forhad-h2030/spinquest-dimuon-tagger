@@ -18,14 +18,13 @@ FEATURE_NAMES = [
     "rec_track_neg_px_st1",
     "rec_dz_vtx",
     "rec_mu_deltaR",
-    # appended (cols 18-26)
+    # appended (cols 18-25)
     "rec_dimu_pT",
     "rec_dimu_xF",
     "rec_dimu_x1",
     "rec_dimu_x2",
     "rec_dimu_costh",
     "rec_dimu_phi",
-    "rec_dimu_vz",
     "rec_track_pos_vz",
     "rec_track_neg_vz",
 ]

@@ -2,7 +2,7 @@
 """
 extract_dimu_features.py
 
-Extracts the per-dimuon features listed in FEATURE_NAMES (27 columns) from the
+Extracts the per-dimuon features listed in FEATURE_NAMES (26 columns) from the
 branches listed in REQUIRED_BRANCHES.
 """
 from __future__ import annotations
@@ -28,8 +28,6 @@ REQUIRED_BRANCHES = [
     "rec_track_pos_px_st1", "rec_track_neg_px_st1",
     # Vertex z
     "rec_track_pos_vz", "rec_track_neg_vz",
-    # Dimuon vertex z
-    "rec_dimu_vz",
 ]
 
 FEATURE_NAMES: List[str] = [
@@ -51,14 +49,13 @@ FEATURE_NAMES: List[str] = [
     "rec_track_neg_px_st1",
     "rec_dz_vtx",
     "rec_mu_deltaR",
-    # appended (cols 18-26)
+    # appended (cols 18-25)
     "rec_dimu_pT",
     "rec_dimu_xF",
     "rec_dimu_x1",
     "rec_dimu_x2",
     "rec_dimu_costh",
     "rec_dimu_phi",
-    "rec_dimu_vz",
     "rec_track_pos_vz",
     "rec_track_neg_vz",
 ]
@@ -79,9 +76,6 @@ def _beam_target_cms() -> Tuple[TLorentzVector, TLorentzVector, TLorentzVector]:
 
 
 def dy_kinematics(
-    """
-    ref : https://e1039-collaboration.github.io/e1039-doc/master/d7/d57/SRecEvent_8cxx_source.html#l00633
-    """
     pos: TLorentzVector,
     neg: TLorentzVector,
     p_beam: TLorentzVector,
@@ -91,6 +85,8 @@ def dy_kinematics(
     """
     Return (pT, xF, x1, x2, costh, phi) for a mu+ mu- pair.
     costh and phi are in the Collins-Soper frame.
+
+    ref : https://e1039-collaboration.github.io/e1039-doc/master/d7/d57/SRecEvent_8cxx_source.html#l00633
     """
     p_sum = pos + neg
     mass = p_sum.M()
@@ -236,9 +232,6 @@ def extract_features(
             # Drell-Yan kinematics (pT, xF, x1, x2, Collins-Soper costh/phi)
             _, xF, x1, x2, costh, phi_cs = dy_kinematics(mu_pos, mu_neg, p_beam, p_target, p_cms)
 
-            # Dimuon vertex z
-            dimu_vz = float(getattr(event, "rec_dimu_vz"))
-
             feats.append([
                 dimu_y, dimu_eta, dimu_E, dimu_pz, m,
                 theta_pos, theta_neg, open_angle,
@@ -247,7 +240,7 @@ def extract_features(
                 dz_vtx,
                 deltaR,
                 dimu_pt, xF, x1, x2, costh, phi_cs,
-                dimu_vz, zpos, zneg,
+                zpos, zneg,
             ])
 
         X = np.asarray(feats, dtype=dtype)
@@ -289,8 +282,8 @@ def main():
     p.add_argument("--input", required=True, type=Path, help="Input ROOT file")
     p.add_argument("--tree", default="tree", help="TTree name (default: tree)")
     p.add_argument("--out", required=True, type=Path, help="Output .npz path")
-    p.add_argument("--mass-min", type=float, default=2.0, help="Mass window min (GeV)")
-    p.add_argument("--mass-max", type=float, default=6.0, help="Mass window max (GeV)")
+    p.add_argument("--mass-min", type=float, default=1.0, help="Mass window min (GeV)")
+    p.add_argument("--mass-max", type=float, default=8.0, help="Mass window max (GeV)")
     p.add_argument("--verbose-every", type=int, default=10000, help="Print progress every N events (0 disables)")
     args = p.parse_args()
 
