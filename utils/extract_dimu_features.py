@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """
 extract_dimu_features.py
-  rec_dimu_mu_pos_px, rec_dimu_mu_pos_py, rec_dimu_mu_pos_pz
-  rec_dimu_mu_neg_px, rec_dimu_mu_neg_py, rec_dimu_mu_neg_pz
-  rec_track_pos_x_st1, rec_track_neg_x_st1, rec_track_pos_px_st1, rec_track_neg_px_st1
-  rec_track_pos_vz, rec_track_neg_vz
+
+Extracts the per-dimuon features listed in FEATURE_NAMES (27 columns) from the
+branches listed in REQUIRED_BRANCHES.
 """
 from __future__ import annotations
 import argparse
@@ -17,6 +16,8 @@ import ROOT
 from ROOT import TLorentzVector
 
 MUON_MASS_GEV = 0.1056
+PROTON_MASS_GEV = 0.938
+BEAM_ENERGY_GEV = 120.0
 
 REQUIRED_BRANCHES = [
     # Muon momenta
@@ -27,6 +28,8 @@ REQUIRED_BRANCHES = [
     "rec_track_pos_px_st1", "rec_track_neg_px_st1",
     # Vertex z
     "rec_track_pos_vz", "rec_track_neg_vz",
+    # Dimuon vertex z
+    "rec_dimu_vz",
 ]
 
 FEATURE_NAMES: List[str] = [
@@ -48,6 +51,16 @@ FEATURE_NAMES: List[str] = [
     "rec_track_neg_px_st1",
     "rec_dz_vtx",
     "rec_mu_deltaR",
+    # appended (cols 18-26)
+    "rec_dimu_pT",
+    "rec_dimu_xF",
+    "rec_dimu_x1",
+    "rec_dimu_x2",
+    "rec_dimu_costh",
+    "rec_dimu_phi",
+    "rec_dimu_vz",
+    "rec_track_pos_vz",
+    "rec_track_neg_vz",
 ]
 
 
@@ -55,6 +68,49 @@ def delta_phi(phi1: float, phi2: float) -> float:
     """Return (phi1 - phi2) wrapped into [-pi, pi]."""
     dphi = phi1 - phi2
     return (dphi + np.pi) % (2.0 * np.pi) - np.pi
+
+
+def _beam_target_cms() -> Tuple[TLorentzVector, TLorentzVector, TLorentzVector]:
+    """Fixed-target 120 GeV proton beam on a proton at rest."""
+    pz_beam = float(np.sqrt(BEAM_ENERGY_GEV**2 - PROTON_MASS_GEV**2))
+    p_beam = TLorentzVector(0.0, 0.0, pz_beam, BEAM_ENERGY_GEV)
+    p_target = TLorentzVector(0.0, 0.0, 0.0, PROTON_MASS_GEV)
+    return p_beam, p_target, p_beam + p_target
+
+
+def dy_kinematics(
+    """
+    ref : https://e1039-collaboration.github.io/e1039-doc/master/d7/d57/SRecEvent_8cxx_source.html#l00633
+    """
+    pos: TLorentzVector,
+    neg: TLorentzVector,
+    p_beam: TLorentzVector,
+    p_target: TLorentzVector,
+    p_cms: TLorentzVector,
+) -> Tuple[float, float, float, float, float, float]:
+    """
+    Return (pT, xF, x1, x2, costh, phi) for a mu+ mu- pair.
+    costh and phi are in the Collins-Soper frame.
+    """
+    p_sum = pos + neg
+    mass = p_sum.M()
+    pT = p_sum.Perp()
+
+    x1 = (p_target * p_sum) / (p_target * p_cms)
+    x2 = (p_beam * p_sum) / (p_beam * p_cms)
+
+    s = p_cms.M2()
+    p_sum_cms = TLorentzVector(p_sum)
+    p_sum_cms.Boost(-p_cms.BoostVector())
+    xF = 2.0 * p_sum_cms.Pz() / np.sqrt(s) / (1.0 - mass * mass / s)
+
+    mT = np.sqrt(mass * mass + pT * pT)
+    costh = 2.0 * (neg.E() * pos.Pz() - pos.E() * neg.Pz()) / mass / mT
+    phi = np.arctan2(
+        2.0 * mT * (neg.X() * pos.Y() - pos.X() * neg.Y()),
+        mass * (pos.X() ** 2 - neg.X() ** 2 + pos.Y() ** 2 - neg.Y() ** 2),
+    )
+    return float(pT), float(xF), float(x1), float(x2), float(costh), float(phi)
 
 
 def _open_tree(input_file: Path | str, tree_name: str):
@@ -91,8 +147,8 @@ def extract_features(
 ) -> Tuple[np.ndarray, List[str], Dict[str, Any]]:
     """
     Returns:
-      X            : (N, 18) array
-      feature_names: list of feature names (length 18)
+      X            : (N, len(FEATURE_NAMES)) array
+      feature_names: list of feature names
       meta         : dict with provenance
     """
     f, tree = _open_tree(input_file, tree_name)
@@ -105,6 +161,7 @@ def extract_features(
 
         mu_pos = TLorentzVector()
         mu_neg = TLorentzVector()
+        p_beam, p_target, p_cms = _beam_target_cms()
 
         kept_mass = 0
         skipped_zero = 0
@@ -176,6 +233,12 @@ def extract_features(
             d_phi = float(delta_phi(mu_pos.Phi(), mu_neg.Phi()))
             deltaR = float(np.sqrt(d_eta * d_eta + d_phi * d_phi))
 
+            # Drell-Yan kinematics (pT, xF, x1, x2, Collins-Soper costh/phi)
+            _, xF, x1, x2, costh, phi_cs = dy_kinematics(mu_pos, mu_neg, p_beam, p_target, p_cms)
+
+            # Dimuon vertex z
+            dimu_vz = float(getattr(event, "rec_dimu_vz"))
+
             feats.append([
                 dimu_y, dimu_eta, dimu_E, dimu_pz, m,
                 theta_pos, theta_neg, open_angle,
@@ -183,6 +246,8 @@ def extract_features(
                 st1_x_pos, st1_x_neg, st1_px_pos, st1_px_neg,
                 dz_vtx,
                 deltaR,
+                dimu_pt, xF, x1, x2, costh, phi_cs,
+                dimu_vz, zpos, zneg,
             ])
 
         X = np.asarray(feats, dtype=dtype)
